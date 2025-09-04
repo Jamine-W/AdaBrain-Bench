@@ -95,19 +95,20 @@ pip install -r requirements.txt
 Please refer to [DATASETS.md](DATASETS.md) for dataset download and preprocessing. Before running the fine-tuning code, you need to create json files to record the dataset information for different task paradigms in `/dataset_config` folder, which is formatted as follows:
 ```Classification.json
 {
-  "BCI-4-2A": {
+  "BCI-IV-2A": {
     "root": {
-      "multi": "./Preprocessing/BCI-4-2A/multi_subject_json",
-      "cross": "./Preprocessing/BCI-4-2A/cross_subject_json",
-      "fewshot": "./Preprocessing/BCI-4-2A/multi_subject_json"
+      "multi": "./preprocessing/BCI-IV-2A/multi_subject_json",
+      "cross": "./preprocessing/BCI-IV-2A/cross_subject_json",
+      "fewshot": "./preprocessing/BCI-IV-2A/multi_subject_json"
     },
     "num_classes": 4,
     "num_t": 4
   },
   "SEED": {
     "root": {
-      "multi": "./Preprocessing/SEED/multi_subject_json",
-      "cross": "./Preprocessing/SEED/cross_subject_json"
+      "multi": "./preprocessing/SEED/multi_subject_json",
+      "cross": "./preprocessing/SEED/cross_subject_json",
+      "fewshot": "./preprocessing/SEED/multi_subject_json"
     },
     "num_classes": 3,
     "num_t": 1
@@ -135,7 +136,7 @@ To integrate a new model, see [ADD_MODEL.md](ADD_MODEL.md) for step-by-step inst
 ### Run Classification
 After preparing the JSON file, you only need to execute a single command in the command line, to run the Classification task.
 
-Take LaBraM and EEGPT on BCI-IV-2A as an example.
+Take LaBraM and EEGPT on BCI-IV-2A as examples.
 ```bash
 python run_finetuning.py  --model_name LaBraM  --dataset BCI-IV-2A --task_mod Classification --subject_mod cross --finetune_mod full --norm_method z_score --batch_size 64 --epochs 50 --lr 1e-3  --sampling_rate 200 --seed 0
 ```
@@ -146,7 +147,7 @@ python run_finetuning.py --model_name EEGPT --dataset BCI-IV-2A --task_mod Class
 ### Run Regression
 To run the Regression task, you only need to execute a single command in the command line. 
 
-Take LaBraM and EEGPT on SEED-VIG as an example.
+Take LaBraM and EEGPT on SEED-VIG as examples.
 ```bash
 python run_finetuning.py --model_name LaBraM --dataset SEED-VIG --task_mod Regression --subject_mod cross --finetune_mod linear --norm_method z_score --batch_size 64 --epochs 50 --lr 1e-3 --sampling_rate 200 --seed 0
 ```
@@ -157,7 +158,7 @@ python run_finetuning.py --model_name EEGPT --dataset SEED-VIG --task_mod Regres
 ### Run Retrieval
 To run the Retrieval task, you only need to execute a single command in the command line. 
 
-Take Things-EEG as an example.
+Take LaBraM and EEGPT on Things-EEG as examples.
 ```bash
 python run_finetuning.py --task_mod Retrieval --model_name LaBraM --finetune_mod full --dataset Things-EEG --norm_method z_score --epochs 40 --batch_size 512 --lr 5e-4 --subject_mod single --subject_id 8 --seed 0
 ```
