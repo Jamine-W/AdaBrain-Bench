@@ -1,23 +1,23 @@
 # --------------------------------------------------------
-# Ada-Brainbench
-# By Junyu Wang
-# Based on LaBraM, EEG_Image_decode, BEiT-v2, timm, DeiT, and DINO code bases
+# Based on LaBraM, EEGPT, CBraMod, BIOT, EEG_Image_decode, BEiT-v2, timm, DeiT, and DINO code bases
 # https://github.com/935963004/LaBraM
+# https://github.com/BINE022/EEGPT/tree/main/downstream
+# https://github.com/wjq-learning/CBraMod
+# https://github.com/ycq091044/BIOT
 # https://github.com/ncclab-sustech/EEG_Image_decode
 # https://github.com/microsoft/unilm/tree/master/beitv2
 # https://github.com/rwightman/pytorch-image-models/tree/master/timm
 # https://github.com/facebookresearch/deit/
 # https://github.com/facebookresearch/dino
 # ---------------------------------------------------------
+
 import os
 import math
-import sys
 from typing import Iterable, Optional
 import torch
 from timm.utils import ModelEma
-from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
+from timm.loss import LabelSmoothingCrossEntropy
 import util.utils as utils
-from einops import rearrange
 from util.utils import wandb_logger
 import random
 import matplotlib.pyplot as plt
@@ -52,7 +52,7 @@ def train_one_epoch(args, model: torch.nn.Module,
     
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
-    metric_logger.add_meter('min_lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
+    # metric_logger.add_meter('min_lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
     update_freq = args.update_freq
     print_freq = 10
@@ -94,8 +94,6 @@ def train_one_epoch(args, model: torch.nn.Module,
         loss_value = loss.item()
 
         if not math.isfinite(loss_value):
-            # print("Loss is {}, stopping training".format(loss_value))
-            # sys.exit(1)
             print("Warning: Loss is {}".format(loss_value))
 
         # this attribute is added by timm on one optimizer (adahessian)
@@ -119,7 +117,7 @@ def train_one_epoch(args, model: torch.nn.Module,
             metric_logger.update(class_acc=class_acc)
         
         metric_logger.update(loss=loss_value)
-        metric_logger.update(loss_scale=loss_scale_value)
+        # metric_logger.update(loss_scale=loss_scale_value)
         min_lr = 10.
         max_lr = 0.
         for group in optimizer.param_groups:
@@ -132,7 +130,7 @@ def train_one_epoch(args, model: torch.nn.Module,
         for group in optimizer.param_groups:
             if group["weight_decay"] > 0:
                 weight_decay_value = group["weight_decay"]
-        metric_logger.update(weight_decay=weight_decay_value)
+        # metric_logger.update(weight_decay=weight_decay_value)
         metric_logger.update(grad_norm=grad_norm)
 
         if log_writer is not None:
@@ -204,7 +202,7 @@ def evaluate(args, data_loader, model, device, header='Test:', ch_names=None, me
         metric_logger.update(loss=loss.item())
         for key, value in results.items():
             metric_logger.meters[key].update(value, n=batch_size)
-        #metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
+
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print('* loss {losses.global_avg:.3f}'
@@ -282,7 +280,6 @@ def train_model(args, eeg_model, dataloader, optimizer, device,
         loss_value = loss.item()
         if not math.isfinite(loss_value):
             print("Loss is {}.".format(loss_value))
-            # sys.exit(1)
 
         max_norm = args.clip_grad
         if loss_scaler is None:
@@ -418,7 +415,6 @@ def main_train_loop(args, current_time, eeg_model,
     v10_accs = []
 
     best_accuracy = 0.0
-    best_model_weights = None
     best_epoch_info = {}
     results = []  # List to store results for each epoch
     for epoch in range(config.epochs):
@@ -455,8 +451,6 @@ def main_train_loop(args, current_time, eeg_model,
         # Append results for this epoch
         epoch_results = {
         "epoch": epoch + 1,
-        # "train_loss": train_loss,
-        # "train_accuracy": train_accuracy,
         "test_loss": test_loss,
         "test_accuracy": test_accuracy,
         "v2_acc": v2_acc,
