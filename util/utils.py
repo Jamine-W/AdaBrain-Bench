@@ -88,7 +88,7 @@ class SmoothedValue(object):
 
     def __init__(self, window_size=20, fmt=None):
         if fmt is None:
-            fmt = "{median:.4f} ({global_avg:.4f})"
+            fmt = "{median:.4f}"
         self.deque = deque(maxlen=window_size)
         self.total = 0.0
         self.count = 0
@@ -195,10 +195,9 @@ class MetricLogger(object):
             'eta: {eta}',
             '{meters}',
             'time: {time}',
-            'data: {data}'
         ]
-        if torch.cuda.is_available():
-            log_msg.append('max mem: {memory:.0f}')
+        # if torch.cuda.is_available():
+        #     log_msg.append('max mem: {memory:.0f}')
         log_msg = self.delimiter.join(log_msg)
         MB = 1024.0 * 1024.0
         for obj in iterable:
@@ -964,9 +963,7 @@ class FewShotDataLoader(Dataset):
                 num_missing_label += (n_ways - len(all_labels))
             for per_label in all_labels:
                 per_label_all_data = [per_data for per_data in per_subject_all_data if int(per_data["label"]) == per_label]
-                # if k_shot > len(per_label_all_data):
-                #     pdb.set_trace()
-                # assert k_shot <= len(per_label_all_data), "k_shot must not exceed the amount of data."
+                
                 if k_shot >= 1:
                     if len(per_label_all_data) >= k_shot:
                         random.shuffle(per_label_all_data)
@@ -1018,20 +1015,6 @@ class FewShotDataLoader(Dataset):
     def get_ch_names(self):
         return self.channel_name
 
-    # def normalize(self, X):
-    #     if self.normalize_method == 'z_score':
-    #         mean_value, std_value = np.array(self.mean_value), np.array(self.std_value)
-    #         mu, sigma = np.expand_dims(mean_value, axis=1), np.expand_dims(std_value, axis=1)
-    #         X = (X - mu) / (sigma + 1e-8)
-    #     elif self.normalize_method == 'min_max':
-    #         X = (X - self.min) / (self.max - self.min)
-    #     elif self.normalize_method == 'ems':
-    #         X = self.exponential_moving_standardize(X)
-    #     elif self.normalize_method == "0.1mv":
-    #         X = X / self.factor
-    #     else:
-    #         pass
-    #     return X
 
     def normalize(self, X):
         if self.normalize_method == 'z_score':
@@ -1099,9 +1082,8 @@ class wandb_logger:
         try:
             wandb.init(
                 # Set the project where this run will be logged
-                project= config.project,
-                # project=config['project'],
-                name=config.name,
+                project= config.model_name,
+                name=f"{config.model_name}-{config.dataset}-{config.subject_mod}",
                 config=config,
                 # entity=config.entity,            
                 )
