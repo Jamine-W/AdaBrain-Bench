@@ -135,56 +135,32 @@ To integrate a new model, see [ADD_MODEL.md](ADD_MODEL.md) for step-by-step inst
 ### Run Classification
 After preparing the JSON file, you only need to execute a single command in the command line, to run the Classification task.
 
-Take BCI-4-2A on LaBraM as an example.
+Take LaBraM and EEGPT on BCI-IV-2A as an example.
 ```bash
-python run_finetuning.py \
-        --task_mod Classification \
-        --model_name LaBraM \
-        --finetune_mod full \
-        --dataset BCI-4-2A \
-        --output_dir run_test \
-        --batch_size 64 \
-        --epochs 50 \
-        --lr 1e-3 \
-        --norm_method z_score \
-        --layer_decay 0.9 \
-        --subject_mod multi \
-        --seed 0
+python run_finetuning.py  --model_name LaBraM  --dataset BCI-IV-2A --task_mod Classification --subject_mod cross --finetune_mod full --norm_method z_score --batch_size 64 --epochs 50 --lr 1e-3  --sampling_rate 200 --seed 0
+```
+
+```bash
+python run_finetuning.py --model_name EEGPT --dataset BCI-IV-2A --task_mod Classification --subject_mod cross --finetune_mod full --norm_method z_score --batch_size 64 --epochs 50 --lr 1e-3  --sampling_rate 250 --seed 0
 ```
 ### Run Regression
 To run the Regression task, you only need to execute a single command in the command line. 
 
-Take SEED-VIG as an example.
+Take LaBraM and EEGPT on SEED-VIG as an example.
 ```bash
-python run_finetuning.py \
-        --task_mod Regression \
-        --model_name LaBraM \
-        --finetune_mod linear \
-        --dataset SEED-VIG \
-        --output_dir run_test \
-        --batch_size 64 \
-        --epochs 50 \
-        --lr 1e-3 \
-        --norm_method z_score \
-        --subject_mod cross \
-        --seed 0
+python run_finetuning.py --model_name LaBraM --dataset SEED-VIG --task_mod Regression --subject_mod cross --finetune_mod linear --norm_method z_score --batch_size 64 --epochs 50 --lr 1e-3 --sampling_rate 200 --seed 0
 ```
+```bash
+python run_finetuning.py --model_name EEGPT --dataset SEED-VIG --task_mod Regression --subject_mod cross --finetune_mod linear --norm_method z_score --batch_size 64 --epochs 50 --lr 1e-3 --sampling_rate 250 --seed 0
+```
+
 ### Run Retrieval
 To run the Retrieval task, you only need to execute a single command in the command line. 
 
-Take Things-EEG2 as an example.
+Take Things-EEG as an example.
 ```bash
-python run_finetuning.py \
-        --task_mod Retrieval \
-        --model_name LaBraM \
-        --finetune_mod full \
-        --dataset Thingseeg2 \
-        --output_dir run_test \
-        --norm_method z_score \
-        --epochs 40 \
-        --batch_size 512 \
-        --lr 5e-4 \
-        --subject_mod single \
-        --subject_id 8 \
-        --seed 0
+python run_finetuning.py --task_mod Retrieval --model_name LaBraM --finetune_mod full --dataset Things-EEG --norm_method z_score --epochs 40 --batch_size 512 --lr 5e-4 --subject_mod single --subject_id 8 --seed 0
+```
+```bash
+python run_finetuning.py --task_mod Retrieval --model_name EEGPT --finetune_mod full --dataset Things-EEG --norm_method z_score --epochs 40 --batch_size 512 --lr 5e-4 --subject_mod single --subject_id 8 --seed 0
 ```
