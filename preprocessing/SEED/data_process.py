@@ -17,11 +17,6 @@ os.makedirs(processed_data_path, exist_ok=True)
 
 
 
-# data_folder = './Preprocessing/SEED/raw_data/Preprocessed_EEG'
-# savePath = "./Preprocessing/SEED/processed_data"
-# os.makedirs(savePath, exist_ok=True)
-
-
 rawDataPath = Path(raw_data_path)
 group = rawDataPath.glob('*.mat')
 group = [path for path in group if 'label' not in path.name]
