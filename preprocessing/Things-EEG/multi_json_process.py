@@ -7,7 +7,6 @@ import random
 import sys
 
 
-
 data_root = sys.argv[1]  
 print(f"Data root: {data_root}")
 processed_data_path = os.path.join(data_root,'Things-EEG/processed_data/subjects_data')
@@ -15,13 +14,6 @@ data_split_path = './preprocessing/Things-EEG/multi_subject_json'
 os.makedirs(data_split_path, exist_ok=True)
 save_train_path = os.path.join(data_split_path, 'train.json')
 save_test_path = os.path.join(data_split_path, 'test.json')
-
-
-# data_folder_train = "./Preprocessing/Things-EEG/subjects_data/train"
-# data_folder_test = "./Preprocessing/Things-EEG/subjects_data/test"
-# os.makedirs('./Preprocessing/Things-EEG/multi_subject_json', exist_ok=True)
-# save_folder_train = './Preprocessing/Things-EEG/multi_subject_json/train.json'
-# save_folder_test = './Preprocessing/Things-EEG/multi_subject_json/test.json'
 
 sampling_rate = 250
 ch_names = ['FP1', 'F3', 'F7', 'FT9', 'FC5', 'FC1', 'C3', 'T7', 'TP9', 'CP5', 'CP1', 'PZ', 'P3', 'P7', 'O1', 'OZ', 'O2', 'P4', 'P8', 'TP10', 'CP6', 'CP2', 'CZ', 'C4', 'T8', 'FT10', 'FC6', 'FC2', 'F4', 'F8', 'FP2', 'AF7', 'AF3', 'AFZ', 'F1', 'F5', 'FT7', 'FC3', 'FCZ', 'C1', 'C5', 'TP7', 'CP3', 'P1', 'P5', 'PO7', 'PO3', 'POZ', 'PO4', 'PO8', 'P6', 'P2', 'CPZ', 'CP4', 'TP8', 'C6', 'C2', 'FC4', 'FT8', 'F6', 'F2', 'AF4', 'AF8']
@@ -57,7 +49,6 @@ for folder_id, per_folder in enumerate(train_folders):
         except Exception as e:
             print(f"Error loading file {pkl_file}: {e}")
             error_list.append(pkl_file)
-            # pdb.set_trace()
             continue
 
         data = {

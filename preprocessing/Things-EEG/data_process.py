@@ -28,7 +28,7 @@ from sklearn.utils import shuffle
 import os
 import pickle
 import sys
-
+import pdb
 
 
 
@@ -378,38 +378,35 @@ if __name__ == "__main__":
 	data_root = sys.argv[1]  
 	print(f"Data root: {data_root}")
 	raw_data_path = os.path.join(data_root,'Things-EEG/raw_data')
-	processed_data_path = os.path.join(data_root,'Things-EEG/processed_data2')
+	processed_data_path = os.path.join(data_root,'Things-EEG/processed_data')
 	os.makedirs(processed_data_path, exist_ok=True)
     
-	# for sub in range(1, 11):
-	# 	# =============================================================================
-	# 	# Epoch and sort the data
-	# 	# =============================================================================
-	# 	# Channel selection, epoching, baseline correction and frequency downsampling of
-	# 	# the test and training data partitions.
-	# 	# Then, the conditions are sorted and the EEG data is reshaped to:
-	# 	# Image conditions × EGG repetitions × EEG channels × EEG time points
-	# 	# This step is applied independently to the data of each partition and session.
-	# 	epoched_test, _, ch_names, times = epoching(n_ses, sub, raw_data_path, sfreq, 'test', seed)
-	# 	epoched_train, img_conditions_train, _, _ = epoching(n_ses, sub, raw_data_path, sfreq, 'training', seed)
+	for sub in range(1, 11):
+		# =============================================================================
+		# Epoch and sort the data
+		# =============================================================================
+		# Channel selection, epoching, baseline correction and frequency downsampling of
+		# the test and training data partitions.
+		# Then, the conditions are sorted and the EEG data is reshaped to:
+		# Image conditions × EGG repetitions × EEG channels × EEG time points
+		# This step is applied independently to the data of each partition and session.
+		epoched_test, _, ch_names, times = epoching(n_ses, sub, raw_data_path, sfreq, 'test', seed)
+		epoched_train, img_conditions_train, _, _ = epoching(n_ses, sub, raw_data_path, sfreq, 'training', seed)
 
 
-	# 	# =============================================================================
-	# 	# Multivariate Noise Normalization
-	# 	# =============================================================================
-	# 	# MVNN is applied independently to the data of each session.
-	# 	whitened_test, whitened_train = mvnn(n_ses, mvnn_dim, epoched_test, epoched_train)
-	# 	del epoched_test, epoched_train
-	# 	# =============================================================================
-	# 	# Merge and save the preprocessed data
-	# 	# =============================================================================
-	# 	# In this step the data of all sessions is merged into the shape:
-	# 	# Image conditions × EGG repetitions × EEG channels × EEG time points
-	# 	# Then, the preprocessed data of the test and training data partitions is saved.
-	# 	save_prepr(n_ses, processed_data_path, sub, whitened_test, whitened_train, img_conditions_train, ch_names,
-	# 		times, seed)
+		# =============================================================================
+		# Multivariate Noise Normalization
+		# =============================================================================
+		# MVNN is applied independently to the data of each session.
+		whitened_test, whitened_train = mvnn(n_ses, mvnn_dim, epoched_test, epoched_train)
+		del epoched_test, epoched_train
+		# =============================================================================
+		# Merge and save the preprocessed data
+		# =============================================================================
+		# In this step the data of all sessions is merged into the shape:
+		# Image conditions × EGG repetitions × EEG channels × EEG time points
+		# Then, the preprocessed data of the test and training data partitions is saved.
+		save_prepr(n_ses, processed_data_path, sub, whitened_test, whitened_train, img_conditions_train, ch_names,
+			times, seed)
 
 	train_test_save(processed_data_path)
-
-	## !!
-	#train_test_save(processed_data_path)
