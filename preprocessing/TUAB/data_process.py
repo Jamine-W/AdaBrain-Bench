@@ -11,9 +11,6 @@ raw_data_path = os.path.join(data_root,'TUAB/raw_data/v3.0.1/edf')
 processed_data_path = os.path.join(data_root,'TUAB/processed_data')
 os.makedirs(processed_data_path, exist_ok=True)
 
-# root = ".Preprocessing/TUAB/raw_data/v3.0.1/edf"
-# dump_root = ".Preprocessing/TUAB/processed_data"
-
 
 channel_std = "01_tcp_ar"
 drop_channels = ['PHOTIC-REF', 'IBI', 'BURSTS', 'SUPPR', 'EEG ROC-REF', 'EEG LOC-REF', 'EEG EKG1-REF', 'EMG-REF', 'EEG C3P-REF', 'EEG C4P-REF', 'EEG SP1-REF', 'EEG SP2-REF', \
