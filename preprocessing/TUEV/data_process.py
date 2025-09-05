@@ -15,21 +15,22 @@ print(f"Data root: {data_root}")
 raw_data_path = os.path.join(data_root,'TUEV/raw_data/v2.0.1')
 processed_data_path = os.path.join(data_root,'TUEV/processed_data')
 os.makedirs(processed_data_path, exist_ok=True)
-train_out_dir = os.path.join(processed_data_path, "train_out_dir")
-eval_out_dir = os.path.join(processed_data_path, "eval_out_dir")
-if not os.path.exists(train_out_dir):
-    os.makedirs(train_out_dir)
-if not os.path.exists(eval_out_dir):
-    os.makedirs(eval_out_dir)
+train_dir = os.path.join(processed_data_path, "train_dir")
+eval_dir = os.path.join(processed_data_path, "eval_dir")
+test_dir = os.path.join(processed_data_path, "test_dir")
+if not os.path.exists(train_dir):
+    os.makedirs(train_dir)
+if not os.path.exists(test_dir):
+    os.makedirs(test_dir)
 
   
-final_data = os.path.join(processed_data_path, "final_data")
-final_train_dir = os.path.join(final_data, "train")
-final_eval_dir = os.path.join(final_data, "eval")
-final_test_dir = os.path.join(final_data, "test")
-os.makedirs(final_train_dir, exist_ok=True)
-os.makedirs(final_eval_dir, exist_ok=True)
-os.makedirs(final_test_dir, exist_ok=True)
+# final_data = os.path.join(processed_data_path, "final_data")
+# final_train_dir = os.path.join(final_data, "train")
+# final_eval_dir = os.path.join(final_data, "eval")
+# final_test_dir = os.path.join(final_data, "test")
+# os.makedirs(final_train_dir, exist_ok=True)
+# os.makedirs(final_eval_dir, exist_ok=True)
+# os.makedirs(final_test_dir, exist_ok=True)
 
 # raw_data = ".Preprocessing/TUEV/raw_data/v2.0.1"
 # processed_data = ".Preprocessing/TUEV/processed_data"
@@ -133,7 +134,7 @@ TrainFeatures = np.empty((0, 23, fs))
 TrainLabels = np.empty([0, 1])
 TrainOffendingChannel = np.empty([0, 1])
 load_up_objects(
-    BaseDirTrain, TrainFeatures, TrainLabels, TrainOffendingChannel, train_out_dir
+    BaseDirTrain, TrainFeatures, TrainLabels, TrainOffendingChannel, train_dir
 )
 
 # Step 2: Process the raw eval data
@@ -143,18 +144,18 @@ EvalFeatures = np.empty((0, 23, fs))
 EvalLabels = np.empty([0, 1])
 EvalOffendingChannel = np.empty([0, 1])
 load_up_objects(
-    BaseDirEval, EvalFeatures, EvalLabels, EvalOffendingChannel, eval_out_dir
+    BaseDirEval, EvalFeatures, EvalLabels, EvalOffendingChannel, test_dir
 )
 
 # Step 3: Split the data into train/eval/test sets by subject.
 seed = 4523
 np.random.seed(seed)
 
-train_files = os.listdir(train_out_dir)
+train_files = os.listdir(train_dir)
 train_sub = list(set([f.split("_")[0] for f in train_files]))
 print("train sub", len(train_sub))
 
-test_files = os.listdir(eval_out_dir)
+test_files = os.listdir(test_dir)
 
 val_sub = np.random.choice(train_sub, size=int(len(train_sub) * 0.2), replace=False)
 train_sub = list(set(train_sub) - set(val_sub))
@@ -162,9 +163,9 @@ train_sub = list(set(train_sub) - set(val_sub))
 val_files = [f for f in train_files if f.split("_")[0] in val_sub]
 train_files = [f for f in train_files if f.split("_")[0] in train_sub]
 
-for file in train_files:
-    os.system(f"cp {os.path.join(train_out_dir, file)} {os.path.join(final_train_dir, file)}")
+# for file in train_files:
+#     os.system(f"cp {os.path.join(train_dir, file)} {os.path.join(train_dir, file)}")
 for file in val_files:
-    os.system(f"cp {os.path.join(train_out_dir, file)} {os.path.join(final_eval_dir, file)}")
-for file in test_files:
-    os.system(f"cp {os.path.join(eval_out_dir, file)} {os.path.join(final_test_dir, file)}")
+    os.system(f"cp {os.path.join(train_dir, file)} {os.path.join(eval_dir, file)}")
+# for file in test_files:
+#     os.system(f"cp {os.path.join(test_dir, file)} {os.path.join(final_test_dir, file)}")
