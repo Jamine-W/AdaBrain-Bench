@@ -19,9 +19,6 @@ processed_data_path = os.path.join(data_root,'SEED-VIG/processed_data')
 label_path = os.path.join(data_root,'SEED-VIG/raw_data/perclos_labels')
 os.makedirs(processed_data_path, exist_ok=True)
 
-# data_dir = './Preprocessing/SEED-VIG/raw_data/Raw_Data'
-# labels_dir = './Preprocessing/SEED-VIG/raw_data/perclos_labels'
-# output_root = "./Preprocessing/SEED-VIG/processed_data"
 
 def butter_bandpass(low_cut, high_cut, fs, order=5):
     nyq = 0.5 * fs
