@@ -124,7 +124,9 @@ class BIOTEncoder(nn.Module):
             onesided=True,
             return_complex=True,
         )
-        return torch.abs(spectral)
+        # return torch.abs(spectral)
+        spectral_abs = torch.sqrt(spectral.real.pow(2) + spectral.imag.pow(2))
+        return spectral_abs
 
     def forward(self, x, n_channel_offset=0, perturb=False):
         """

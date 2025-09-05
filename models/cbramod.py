@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-# from torcheeg.models.transformer import ViT
 from models.criss_cross_transformer import TransformerEncoderLayer, TransformerEncoder
 
 
@@ -82,10 +81,10 @@ class PatchEmbedding(nn.Module):
 
         mask_x = mask_x.contiguous().view(bz*ch_num*patch_num, patch_size)
         spectral = torch.fft.rfft(mask_x, dim=-1, norm='forward')
-        spectral = torch.abs(spectral).contiguous().view(bz, ch_num, patch_num, 101)
+        spectral_abs = torch.sqrt(spectral.real.pow(2) + spectral.imag.pow(2))
+        spectral = spectral_abs.contiguous().view(bz, ch_num, patch_num, 101)
+        # spectral = torch.abs(spectral).contiguous().view(bz, ch_num, patch_num, 101)
         spectral_emb = self.spectral_proj(spectral)
-        # print(patch_emb[5, 5, 5, :])
-        # print(spectral_emb[5, 5, 5, :])
         patch_emb = patch_emb + spectral_emb
 
         positional_embedding = self.positional_encoding(patch_emb.permute(0, 3, 1, 2))
