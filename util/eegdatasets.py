@@ -41,7 +41,8 @@ class EEGDataset():
         test_root = f"{dataset_info['root']['multi']}/test.json"
 
         dataset_root = train_root if self.train else test_root
-        all_json_data = json.load(open(dataset_root, "r"))
+        with open(dataset_root, "r") as dataset_file:
+            all_json_data = json.load(dataset_file)
         data_info = all_json_data['dataset_info']
         self.default_rate = data_info['sampling_rate']
         self.ch_names = data_info['ch_names']
@@ -89,7 +90,8 @@ class EEGDataset():
             eeg_paths = [item["EEG"] for item in items]
             eeg_features = []
             for eeg_path in eeg_paths:
-                sample = pickle.load(open(eeg_path, "rb"))['X']
+                with open(eeg_path, "rb") as eeg_file:
+                    sample = pickle.load(eeg_file)['X']
                 if self.sampling_rate != self.default_rate:
                     sample = self.resample_data(sample)
                 sample = self.normalize(sample)
@@ -158,7 +160,8 @@ class EEGDataset():
         eeg_sources = self.files[index]
         if self.train:
             datapath = eeg_sources['EEG']
-            x = pickle.load(open(datapath, "rb"))['X']
+            with open(datapath, "rb") as eeg_file:
+                x = pickle.load(eeg_file)['X']
             if self.sampling_rate != self.default_rate:
                 x = self.resample_data(x)
             x = self.normalize(x)

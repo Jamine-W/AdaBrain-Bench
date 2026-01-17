@@ -15,13 +15,12 @@ print(f"Data root: {data_root}")
 raw_data_path = os.path.join(data_root,'TUEV/raw_data/v2.0.1')
 processed_data_path = os.path.join(data_root,'TUEV/processed_data')
 os.makedirs(processed_data_path, exist_ok=True)
-train_dir = os.path.join(processed_data_path, "train_dir")
-eval_dir = os.path.join(processed_data_path, "eval_dir")
-test_dir = os.path.join(processed_data_path, "test_dir")
-if not os.path.exists(train_dir):
-    os.makedirs(train_dir)
-if not os.path.exists(test_dir):
-    os.makedirs(test_dir)
+train_dir = os.path.join(processed_data_path, "train")
+eval_dir = os.path.join(processed_data_path, "eval")
+test_dir = os.path.join(processed_data_path, "test")
+os.makedirs(train_dir, exist_ok=True)
+os.makedirs(eval_dir, exist_ok=True)
+os.makedirs(test_dir, exist_ok=True)
 
   
 # final_data = os.path.join(processed_data_path, "final_data")

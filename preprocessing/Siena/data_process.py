@@ -171,9 +171,12 @@ def process_edf(edf_path, seizure_records, processed_data_path, sampling_rate=51
 
         # Save all data segments
         base_name = os.path.splitext(current_file)[0]
+        patient_id = base_name.split('-')[0]
+        patient_dir = os.path.join(processed_data_path, patient_id)
+        os.makedirs(patient_dir, exist_ok=True)
         for idx, (seg, label) in enumerate(segments):
             output_data = {"X": seg, "Y": label}
-            output_file = os.path.join(processed_data_path, f"{base_name}_{idx}.pkl")
+            output_file = os.path.join(patient_dir, f"{base_name}_{idx}.pkl")
             with open(output_file, "wb") as f:
                 pickle.dump(output_data, f)
 

@@ -8,26 +8,22 @@ import random
 import sys
 
 
-data_root = sys.argv[1]  
+data_root = sys.argv[1]
 print(f"Data root: {data_root}")
-processed_data_path = os.path.join(data_root,'Siena/processed_data')
+processed_data_path = os.path.join(data_root, 'Siena/processed_data')
 data_split_path = './preprocessing/Siena/cross_subject_json'
 os.makedirs(data_split_path, exist_ok=True)
 save_train_path = os.path.join(data_split_path, 'train.json')
 save_val_path = os.path.join(data_split_path, 'val.json')
 save_test_path = os.path.join(data_split_path, 'test.json')
 
-# data_folder = "./Preprocessing/Siena/raw_data"
-# os.makedirs('./Preprocessing/Siena/cross_subject_json', exist_ok=True)
-# save_folder_train = './Preprocessing/Siena/cross_subject_json/train.json'
-# save_folder_val = './Preprocessing/Siena/cross_subject_json/val.json'
-# save_folder_test = './Preprocessing/Siena/cross_subject_json/test.json'
-
 sampling_rate = 512
 ch_names = ['Fp1', 'F3', 'C3', 'P3', 'O1', 'F7', 'T3', 'T5', 'Fc1', 'Fc5', 'Cp1', 'Cp5', 'F9', 'Fz', 'Cz', 'Pz', 'Fp2',
             'F4', 'C4', 'P4', 'O2', 'F8', 'T4', 'T6', 'Fc2', 'Fc6', 'Cp2', 'Cp6', 'F10']
 num_channels = len(ch_names)
 random.seed(42)
+
+stats_map = {}
 
 
 def load_subject_metadata(subject_folder):
@@ -41,6 +37,13 @@ def load_subject_metadata(subject_folder):
         try:
             with open(file_path, 'rb') as f:
                 eeg_data = pickle.load(f)
+            X = eeg_data['X']
+            stats_map[file_path] = {
+                "mean": X.mean(axis=1),
+                "std": X.std(axis=1),
+                "min": X.min(),
+                "max": X.max()
+            }
             subject_data.append({
                 "subject_id": subject_num,
                 "subject_name": subject_name,
@@ -52,22 +55,25 @@ def load_subject_metadata(subject_folder):
     return subject_data
 
 
-def compute_normalization_params(data_list):
-    """Calculate normalization parameters."""
+def compute_stats_from_map(data_list):
     total_mean = np.zeros(num_channels)
     total_std = np.zeros(num_channels)
-    max_val, min_val = -np.inf, np.inf
+    max_val = -np.inf
+    min_val = np.inf
     count = 0
 
     for data in data_list:
-        with open(data["file"], 'rb') as f:
-            eeg = pickle.load(f)['X']
-
-        max_val = max(max_val, eeg.max())
-        min_val = min(min_val, eeg.min())
-        total_mean += eeg.mean(axis=1)
-        total_std += eeg.std(axis=1)
+        stats = stats_map.get(data["file"])
+        if stats is None:
+            continue
+        total_mean += stats["mean"]
+        total_std += stats["std"]
+        max_val = max(max_val, stats["max"])
+        min_val = min(min_val, stats["min"])
         count += 1
+
+    if count == 0:
+        return total_mean.tolist(), total_std.tolist(), max_val, min_val
 
     return (total_mean / count).tolist(), (total_std / count).tolist(), max_val, min_val
 
@@ -88,15 +94,11 @@ def split_subject_data(subject_data, val_ratio=0.2):
     return train_data, val_data
 
 
-def save_dataset(data_list, save_path, norm_params=None):
-    if norm_params is None:
-        print("Computing normalization parameters...")
-        mean, std, max_val, min_val = compute_normalization_params(data_list)
-    else:
-        mean, std, max_val, min_val = norm_params
+def save_dataset(data_list, save_path, norm_params):
+    mean, std, max_val, min_val = norm_params
 
     dataset = {
-        "subject_data": data_list,  # 只包含元数据
+        "subject_data": data_list,
         "dataset_info": {
             "sampling_rate": sampling_rate,
             "ch_names": ch_names,
@@ -121,7 +123,7 @@ def main():
     )
 
     train_subjects = [s for s in subject_folders if int(os.path.basename(s)[2:]) <= 14]
-    test_subjects = [s for s in subject_folders if int(os.path.basename(s)[2:]) > 14]  # The last two subjects are PN16 and PN17.
+    test_subjects = [s for s in subject_folders if int(os.path.basename(s)[2:]) > 14]
 
     all_train_data, all_val_data = [], []
     for subject in train_subjects:
@@ -138,7 +140,7 @@ def main():
     print(f"Train: {len(all_train_data)}, Val: {len(all_val_data)}, Test: {len(all_test_data)}")
 
     print("\nComputing normalization...")
-    norm_params = compute_normalization_params(all_train_data)
+    norm_params = compute_stats_from_map(all_train_data)
 
     print("\nSaving datasets...")
     save_dataset(all_train_data, save_train_path, norm_params)

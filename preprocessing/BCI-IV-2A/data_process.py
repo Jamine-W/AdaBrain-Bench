@@ -8,8 +8,8 @@ import sys
 
 data_root = sys.argv[1]  
 print(f"Data root: {data_root}")
-raw_data_path = os.path.join(data_root,'BCI-4-2A/raw_data')
-processed_data_path = os.path.join(data_root,'BCI-4-2A/processed_data')
+raw_data_path = os.path.join(data_root,'BCI-IV-2A/raw_data')
+processed_data_path = os.path.join(data_root,'BCI-IV-2A/processed_data')
 os.makedirs(processed_data_path, exist_ok=True)
 
 # Sampling rate and time split range

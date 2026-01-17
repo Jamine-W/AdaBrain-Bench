@@ -2,22 +2,18 @@ import json
 import os
 import pickle
 import numpy as np
-from collections import defaultdict
 import sys
 
 
-data_root = sys.argv[1]  
+data_root = sys.argv[1]
 print(f"Data root: {data_root}")
-processed_data_path = os.path.join(data_root,'SHU/processed_data')
+processed_data_path = os.path.join(data_root, 'SHU/processed_data')
 data_split_path = './preprocessing/SHU/multi_subject_json'
 os.makedirs(data_split_path, exist_ok=True)
 save_train_path = os.path.join(data_split_path, 'train.json')
 save_val_path = os.path.join(data_split_path, 'val.json')
 save_test_path = os.path.join(data_split_path, 'test.json')
 
-# path1 = './Preprocessing/SHU/processed_data/'
-# output_dir = './Preprocessing/SHU/multi_subject_json/'
-# os.makedirs(output_dir, exist_ok=True)
 
 def save_to_json(data, filename):
     with open(filename, 'w', encoding='utf-8') as f:
@@ -25,36 +21,31 @@ def save_to_json(data, filename):
     print(f"File has been saved to {filename}")
 
 
-def calculate_dataset_stats(data_list):
-    max_value = -float('inf')
-    min_value = float('inf')
-    channel_means = 0
-    channel_stds = 0
-    i = 0
+stats_map = {}
+
+
+def compute_stats_from_map(data_list):
+    max_value = -np.inf
+    min_value = np.inf
+    channel_means = np.zeros(32)
+    channel_stds = np.zeros(32)
+    count = 0
 
     for file_data in data_list:
-        file_path = file_data['file']
-        if not os.path.exists(file_path):
-            print(f"File does not exist: {file_path}")
+        stats = stats_map.get(file_data['file'])
+        if stats is None:
             continue
+        channel_means += stats['mean']
+        channel_stds += stats['std']
+        max_value = max(max_value, stats['max'])
+        min_value = min(min_value, stats['min'])
+        count += 1
 
-        with open(file_path, 'rb') as f:
-            data = pickle.load(f)
-        X = data['X']
+    if count == 0:
+        return max_value, min_value, channel_means, channel_stds
 
-        current_max = np.max(X)
-        current_min = np.min(X)
-        if current_max > max_value:
-            max_value = current_max
-        if current_min < min_value:
-            min_value = current_min
-
-        channel_means += np.mean(X, axis=-1)
-        channel_stds += np.std(X, axis=-1)
-        i += 1
-
-    mean_values = channel_means / i
-    std_values = channel_stds / i
+    mean_values = channel_means / count
+    std_values = channel_stds / count
 
     return max_value, min_value, mean_values, std_values
 
@@ -71,13 +62,12 @@ dataset_info_template = {
     "std": None
 }
 
-
 # Split by session
 train_data = []
 val_data = []
 test_data = []
 
-for i in range(1,26):
+for i in range(1, 26):
     subject_id = i
     subject_path = str(subject_id) + '/'
     data_folder = os.path.join(processed_data_path, subject_path)
@@ -98,6 +88,14 @@ for i in range(1,26):
                 try:
                     with open(file_path, 'rb') as f:
                         data = pickle.load(f)
+
+                    X = data['X']
+                    stats_map[file_path] = {
+                        'mean': np.mean(X, axis=-1),
+                        'std': np.std(X, axis=-1),
+                        'min': np.min(X),
+                        'max': np.max(X)
+                    }
 
                     label = data['Y'].tolist()
                     file_data = {
@@ -120,12 +118,12 @@ for i in range(1,26):
 print(f"train_set: {len(train_data)}, val_set: {len(val_data)}, test_set: {len(test_data)}")
 
 # Compute normalization parameters
-train_max, train_min, train_mean, train_std = calculate_dataset_stats(train_data)
+train_max, train_min, train_mean, train_std = compute_stats_from_map(train_data)
 
 dataset_info = dataset_info_template.copy()
 dataset_info.update({
-    "min": train_max,
-    "max": train_min,
+    "min": train_min,
+    "max": train_max,
     "mean": train_mean.tolist(),
     "std": train_std.tolist()
 })
