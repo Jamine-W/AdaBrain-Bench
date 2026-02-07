@@ -10,7 +10,7 @@ Qihao Zheng, Lei Bai, Wanli Ouyang, Chunfeng Song_
 </p>
 
 [![arXiv](https://img.shields.io/badge/arXiv-preprint-b31b1b?style=flat&logo=arxiv
-)](https://arxiv.org/abs/2505.17099)
+)](https://arxiv.org/abs/2507.09882)
 
 
 </div>
@@ -27,7 +27,7 @@ AdaBrain-Bench provides code for evaluating EEG foundation models across **13 da
 - [Installation](#installation)
 - [Dataset preparation](#dataset-preparation)
 - [Models](#models)
-- [Runing](#running)
+- [Running](#running)
 
 
 
