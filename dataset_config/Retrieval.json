@@ -1,0 +1,12 @@
+{
+  "Things-EEG": {
+    "root": {
+      "multi": "./preprocessing/Things-EEG/multi_subject_json"
+    },
+    "features": {
+      "train_features": "/mnt/shared-storage-user/ai4sdata2-share/adabrain-bench-data/Things-EEG/image_features/ViT-H-14_features_train.pt",
+      "test_features": "/mnt/shared-storage-user/ai4sdata2-share/adabrain-bench-data/Things-EEG/image_features/ViT-H-14_features_test.pt"
+    },
+    "num_t": 1
+  }
+}

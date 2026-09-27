@@ -56,7 +56,7 @@ class EEGDataset():
             self.files = [item for item in all_files if int(item.get("subject_id")) == self.subject_id]
         elif self.subject_mod == 'multi':
             self.files = all_files
-        elif self.subject_mod == 'loso':
+        elif self.subject_mod in ('cross', 'loso'):
             if self.train:
                 self.files = [item for item in all_files if int(item.get("subject_id")) != self.subject_id]
             else:

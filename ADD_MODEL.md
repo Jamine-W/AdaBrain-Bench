@@ -13,53 +13,6 @@ First, place your model files in the `models/` folder. Next, make the following 
 
 **Modification 2**: Create a model wrapper class **Ada_ModelX** that includes model-specific preprocessing and feedforward steps. The following is an example of **Ada_CBraMod**:
    
-   <!-- **Step 1:** Create a wrapper class  -->
-
-   <!-- Initialize the original model
-
-   ```python
-   model = CBraMod()
-   ``` -->
-
-   <!-- **Step 2:** *(Optional)* load pre-trained weights  
-   ```python
-   if from_pretrain:
-       print("Load ckpt from %s" % fintune_list[args.model_name])
-       model.load_state_dict(
-           torch.load(fintune_list[args.model_name], map_location=torch.device('cpu'))
-       )
-   ```
-   > `finetune_list` contains the mapping defined earlier; `from_pretrain` is passed later. -->
-
-   <!-- **Step 3:** Replace the original task head with `nn.Identity()` and register a new task head  
-   ```python
-   model.proj_out = nn.Identity()
-   self.task_head = nn.Identity()
-   ```
-   > The specific task head will be added later. -->
-
-   <!-- **Step 4:** Store the model and any additional modules; your original model is defined as `self.main_model`.  
-   ```python
-   self.main_model = model
-   ```
-   > If your model needs extra layers (e.g., EEGPT requires a 1-D convolution before the main model), add them here:  
-   ```python
-   self.chan_conv = Conv1dWithConstraint(len(ch_names), chans_num, 1, max_norm=1)
-   ``` -->
-
-   <!-- **Step 5:** Define the `forward()` method.  
-   > Implement the full pipeline from input to final output. We will directly use `output = model(input)` to obtain your model's output in subsequent steps. -->
-
-   <!-- For **CBraMod** the data must be reshaped to `[batch_size, channel, time, 200]`:  
-   ```python
-   def forward(self, x):
-       b, n, t = x.shape
-       x = x.reshape(b, n, -1, 200)
-       y = self.main_model(x)
-       return self.task_head(y) -->
-   <!-- ``` -->
-   <!-- > `y` is the raw output of your model, and the final result returned will be the value after passing through `self.task_head`. -->
-
 ```python
 class Ada_CBraMod(nn.Module):
     def __init__(self, args, from_pretrain=False):

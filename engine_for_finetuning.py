@@ -407,7 +407,8 @@ def main_train_loop(args, current_time, eeg_model,
                     config, loss_scaler, logger=None, lr_schedule_values=None, ch_names=None,
                     wd_schedule_values=None, num_training_steps_per_epoch=None, model_ema=None):
     logger = wandb_logger(config) if logger else None
-    logger.watch(eeg_model,logger) 
+    if logger is not None:
+        logger.watch(eeg_model, logger)
     train_losses, train_accuracies = [], []
     test_losses, test_accuracies = [], []
     v2_accs = []
@@ -450,17 +451,19 @@ def main_train_loop(args, current_time, eeg_model,
         
         # Append results for this epoch
         epoch_results = {
-        "epoch": epoch + 1,
-        "test_loss": test_loss,
-        "test_accuracy": test_accuracy,
-        "v2_acc": v2_acc,
-        "v4_acc": v4_acc,
-        "v10_acc": v10_acc,
-        "top5_acc":top5_acc,
-        "v50_acc": v50_acc,
-        "v100_acc": v100_acc,
-        "v50_top5_acc":v50_top5_acc,
-        "v100_top5_acc": v100_top5_acc
+            "epoch": epoch + 1,
+            "train_loss": train_loss,
+            "train_accuracy": train_accuracy,
+            "test_loss": test_loss,
+            "test_accuracy": test_accuracy,
+            "v2_acc": v2_acc,
+            "v4_acc": v4_acc,
+            "v10_acc": v10_acc,
+            "top5_acc": top5_acc,
+            "v50_acc": v50_acc,
+            "v100_acc": v100_acc,
+            "v50_top5_acc": v50_top5_acc,
+            "v100_top5_acc": v100_top5_acc,
         }
 
         results.append(epoch_results)
@@ -479,19 +482,30 @@ def main_train_loop(args, current_time, eeg_model,
                 "v4_acc":v4_acc,
                 "v10_acc":v10_acc
             }
-        logger.log({
-            "Train Loss": train_loss,
-            "Train Accuracy": train_accuracy,
-            "Test Loss": test_loss,
-            "Test Accuracy": test_accuracy,
-            "v2 Accuracy": v2_acc,
-            "v4 Accuracy": v4_acc,
-            "v10 Accuracy": v10_acc,
-            "Epoch": epoch
-        })
+        print(
+            f"Epoch {epoch + 1}/{config.epochs} - Train Loss: {train_loss:.4f}, "
+            f"Train Accuracy: {train_accuracy:.4f}, Test Loss: {test_loss:.4f}, "
+            f"Test Accuracy: {test_accuracy:.4f}, Top5 Accuracy: {top5_acc:.4f}",
+            flush=True,
+        )
+        print(
+            f"Epoch {epoch + 1}/{config.epochs} - v2 Accuracy:{v2_acc} - "
+            f"v4 Accuracy:{v4_acc} - v10 Accuracy:{v10_acc} - "
+            f"v50 Accuracy:{v50_acc} - v100 Accuracy:{v100_acc}",
+            flush=True,
+        )
 
-        print(f"Epoch {epoch + 1}/{config.epochs} - Train Loss: {train_loss:.4f}, Train Accuracy: {train_accuracy:.4f}, Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}, Top5 Accuracy: {top5_acc:.4f}")
-        print(f"Epoch {epoch + 1}/{config.epochs} - v2 Accuracy:{v2_acc} - v4 Accuracy:{v4_acc} - v10 Accuracy:{v10_acc} - v50 Accuracy:{v50_acc} - v100 Accuracy:{v100_acc}")
+        if logger is not None:
+            logger.log({
+                "Train Loss": train_loss,
+                "Train Accuracy": train_accuracy,
+                "Test Loss": test_loss,
+                "Test Accuracy": test_accuracy,
+                "v2 Accuracy": v2_acc,
+                "v4 Accuracy": v4_acc,
+                "v10 Accuracy": v10_acc,
+                "Epoch": epoch + 1,
+            })
   
     # # Load the best model weights
     # model.load_state_dict(best_model_weights)
@@ -545,8 +559,9 @@ def main_train_loop(args, current_time, eeg_model,
     # Add main title
     plt.suptitle('pos_img_text', fontsize=16, y=1.05)
     plt.savefig('pos_img_text')
-    logger.finish()
 
-    print(info_text)
+    print(info_text, flush=True)
+    if logger is not None:
+        logger.finish()
 
     return results

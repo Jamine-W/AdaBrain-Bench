@@ -9,6 +9,7 @@
 # https://github.com/rwightman/pytorch-image-models/tree/master/timm
 # https://github.com/facebookresearch/deit/
 # https://github.com/facebookresearch/dino
+# https://github.com/jingyingma01/CodeBrain
 # ---------------------------------------------------------
 
 import argparse
@@ -21,9 +22,9 @@ import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import json
 import os
-
 from pathlib import Path
 from collections import OrderedDict
+import models.modeling_finetune
 from timm.models import create_model
 from util.optim_factory import create_optimizer, get_parameter_groups, LayerDecayValueAssigner
 from util.utils import NativeScalerWithGradNormCount as NativeScaler
@@ -32,6 +33,8 @@ from util.eegdatasets import EEGDataset
 from engine_for_finetuning import train_one_epoch, evaluate, main_train_loop
 import csv
 from functools import partial
+from models.CSBrain import CSBrain
+from models.SSSM import SSSM
 from models.cbramod import CBraMod
 from models.EEGPT_mcae import EEGTransformer, Conv1dWithConstraint, LinearWithConstraint
 from models.biot import BIOTClassifier
@@ -40,15 +43,18 @@ from models.LMDA import LMDA
 from models.EEGConformer import Conformer
 from models.EEGTransformer import STTransformer
 from models.loss import ClipLoss
-
 from torch.utils.data import random_split, ConcatDataset
+
+os.environ['PYHEALTH_CACHE_PATH'] = '/home/yaozhouheng/.cache/pyhealth/'
 
 # -------------------------------The pre-trained weights of the foundation model---------------------------------------
 finetune_list = {
     'LaBraM': './checkpoints/labram-base.pth',
     'CBraMod': './checkpoints/pretrained_weights.pth',
     'EEGPT': './checkpoints/eegpt_mcae_58chs_4s_large4E.ckpt',
-    'BIOT': "./checkpoints/EEG-six-datasets-18-channels.ckpt"
+    'BIOT': './checkpoints/EEG-six-datasets-18-channels.ckpt',
+    'CodeBrain': './checkpoints/CodeBrain.pth',
+    'CSBrain': './checkpoints/CSBrain.pth'
 }
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -58,9 +64,9 @@ def get_args():
     # Fine-tuning parameters
     parser.add_argument('--dataset', default='SEED', type=str, 
                         choices=['SEED', 'SEED-IV', 'BCI-IV-2A', 'SHU', 'SEED-VIG', 'EEGMAT',
-                                 'Sleep-EDF', 'HMC', 'SHHS', 'TUAB', 'TUEV', 'Things-EEG'])
+                                 'Sleep-EDF', 'HMC', 'SHHS', 'TUAB', 'TUEV', 'Siena', 'Things-EEG'])
     parser.add_argument('--model_name', default='LaBraM', type=str,
-                        choices=['LaBraM', 'CBraMod', 'EEGPT', 'BIOT', 'EEGNet', 'LMDA', 'EEGConformer', 'ST-Transformer'])
+                        choices=['LaBraM', 'CBraMod', 'EEGPT', 'BIOT', 'EEGNet', 'LMDA', 'EEGConformer', 'ST-Transformer', 'CSBrain', 'CodeBrain'])
     parser.add_argument('--task_mod', default="Classification", type=str, choices=['Classification', 'Regression', 'Retrieval'],
                         help='type of task')
     parser.add_argument('--subject_mod', default="multi", type=str, choices=['multi', 'cross', 'fewshot', 'single'],
@@ -74,13 +80,16 @@ def get_args():
                         help='normalization methods including z-score, 95-percentile, and unit rescale (0.1mv)')
     
     parser.add_argument('--max_subject', default=8, type=int, help='number of subjects used for spliting validation set')
-    parser.add_argument('--sampling_rate', default=200, type=int, choices=[200, 256], help='BIOT, LaBraM and CBraMod is 200Hz; EEGPT is 256Hz')
+    parser.add_argument('--split_root', default='', type=str,
+                        help='Optional directory containing train.json, val.json, and test.json. Overrides the configured split for this run.')
+    parser.add_argument('--experiment_tag', default='', type=str,
+                        help='Optional tag inserted into the output-directory name to keep results from alternative splits separate.')
+    parser.add_argument('--sampling_rate', default=200, type=int, choices=[200, 256], help='CSBrain, CodeBrain, BIOT, LaBraM and CBraMod is 200Hz; EEGPT is 256Hz')
     parser.add_argument('--k_shot', default=10, type=float, help='number of shots in the few_shot setting')
     
-
-    parser.add_argument('--logger', type=bool, default=False, help='enable WandB logging for retrieval')
+    parser.add_argument('--logger', action='store_true', help='enable WandB logging for retrieval')
     parser.add_argument('--device', default='cuda', help='device to use for training / testing')
-    parser.add_argument('--save_ckpt', action='store_true', default=True)
+    parser.add_argument('--save_ckpt', action='store_true', default=False)
     parser.add_argument('--num_workers', default=10, type=int)
     parser.add_argument('--disable_eval_during_finetuning', action='store_true', default=False)
     parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')
@@ -218,7 +227,6 @@ class Ada_LaBraM(nn.Module):
             num_t=num_t
         )
         
-
         # load the pre-trained weights.
         if from_pretrain:
             if finetune_list[args.model_name].startswith('https'):
@@ -260,15 +268,11 @@ class Ada_LaBraM(nn.Module):
 
             utils.load_state_dict(model, checkpoint_model)
         
-        
-        
         model.head = nn.Identity()
         self.main_model = model
         self.ch_names = ch_names
-
         self.task_head=nn.Identity()
         
-    
     def forward(self, x):
         b, n, t = x.shape
         x = x.reshape(b, n, -1, 200)
@@ -288,15 +292,122 @@ class Ada_CBraMod(nn.Module):
         
         model.proj_out = nn.Identity()
         self.main_model = model
-
         self.task_head=nn.Identity()
-        
     
     def forward(self, x):
         b, n, t = x.shape
         x = x.reshape(b, n, -1, 200)
         output = self.main_model(x)
         output = self.task_head(output)
+        return output
+
+
+class Ada_CSBrain(nn.Module):
+    def __init__(self, args, from_pretrain=False):
+        super().__init__()
+
+        config_path = "./util/csbrain_use_channels_names.json"
+        with open(config_path, "r", encoding="utf-8") as config_file:
+            dataset_configs = json.load(config_file)
+
+        # Brain region encoding: Frontal lobe (0) | Parietal lobe (1) | Temporal lobe (2) | Occipital lobe (3) | Central region (4)
+        dataset_config = dataset_configs.get(args.dataset)
+        brain_regions = dataset_config["brain_regions"]
+        electrode_labels = dataset_config["electrode_labels"]
+        topology = dataset_config["topology"]
+
+        if len(brain_regions) != len(electrode_labels):
+            raise ValueError(
+                f"Invalid CSBrain configuration for {args.dataset}: "
+                f"brain_regions has {len(brain_regions)} entries, but "
+                f"electrode_labels has {len(electrode_labels)} entries."
+            )
+
+        # Group electrode indices by brain region
+        region_groups = {}
+        for i, region in enumerate(brain_regions):
+            if region not in region_groups:
+                region_groups[region] = []
+            region_groups[region].append((i, electrode_labels[i]))
+
+        # Sort based on topological relationships
+        sorted_indices = []
+        for region in sorted(region_groups.keys()):
+            region_electrodes = region_groups[region]
+            region_topology = topology[str(region)]
+            topology_order = {channel_name.upper(): index for index, channel_name in enumerate(region_topology)}
+            sorted_electrodes = sorted(region_electrodes, key=lambda item: topology_order[item[1].upper()])
+            sorted_indices.extend([e[0] for e in sorted_electrodes])
+
+        model = CSBrain(brain_regions=brain_regions, sorted_indices=sorted_indices)
+        
+        if from_pretrain:
+            print("Load ckpt from %s" % finetune_list[args.model_name])
+            state_dict = torch.load(finetune_list[args.model_name], map_location=torch.device('cpu'))
+            new_state_dict = {}
+            for key, value in state_dict.items():
+                new_key = key.replace("module.", "")
+                new_state_dict[new_key] = value
+            model_state_dict = model.state_dict()
+            matching_dict = {k: v for k, v in new_state_dict.items() if k in model_state_dict and v.size() == model_state_dict[k].size()}
+            model_state_dict.update(matching_dict)
+            model.load_state_dict(model_state_dict)
+        
+        model.proj_out = nn.Identity()
+        self.main_model = model
+        self.task_head=nn.Identity()
+    
+    def forward(self, x):
+        b, n, t = x.shape
+        x = x.reshape(b, n, -1, 200)
+        output = self.main_model(x)
+        output = self.task_head(output)
+        return output
+
+
+class Ada_CodeBrain(nn.Module):
+    def __init__(self, args, from_pretrain=False):
+        super().__init__()
+
+        model = SSSM(
+            in_channels=200,
+            res_channels=200,
+            skip_channels=200,
+            out_channels=200,
+            num_res_layers=8,
+            diffusion_step_embed_dim_in=200,
+            diffusion_step_embed_dim_mid=200,
+            diffusion_step_embed_dim_out=200,
+            s4_lmax=570,
+            s4_d_state=64,
+            s4_dropout=0.1,
+            s4_bidirectional=True,
+            s4_layernorm=True,
+            codebook_size_t=4096,
+            codebook_size_f=4096,
+            if_codebook=False,
+            device=args.device,
+        )
+
+        if from_pretrain:
+            checkpoint_path = finetune_list[args.model_name]
+            print(f"Load ckpt from {checkpoint_path}")
+            state_dict = torch.load(checkpoint_path, map_location=torch.device('cpu'))
+            new_state_dict = {}
+            for key, value in state_dict.items():
+                new_state_dict[key[7:]] = value
+            model.load_state_dict(new_state_dict)
+            print("CodeBrain pretrained weights loaded successfully.")
+
+        model.proj_out = nn.Identity()
+        self.main_model = model
+        self.task_head = nn.Identity()
+
+    def forward(self, x):
+        b, n, t = x.shape
+        x = x.reshape(b, n, -1, 200)
+        features = self.main_model(x)
+        output = self.task_head(features)
         return output
 
 class Ada_EEGPT(nn.Module):
@@ -427,7 +538,7 @@ class Ada_STTransformer(nn.Module):
 # -----------------------------Load the models based on args.model_name------------------------------
 def get_models(args, ch_names, num_t):
     from_pretrain = False
-    if args.model_name in ['LaBraM', 'CBraMod', 'EEGPT', 'BIOT']:
+    if args.model_name in ['LaBraM', 'CBraMod', 'EEGPT', 'BIOT', 'CodeBrain', 'CSBrain']:
         if args.finetune_mod in ['full', 'linear']:
             from_pretrain=True
  
@@ -440,6 +551,22 @@ def get_models(args, ch_names, num_t):
             model.task_head = RegressionLayers(input_dim=200, hidden_dim=200, output_dim=1, patch_mean=True, remove_cls=True)
         elif args.task_mod == 'Retrieval':
             model.task_head = LinearWithConstraint((len(ch_names) * num_t + 1) * 200, 1024, max_norm=1, flatten=1)
+    elif args.model_name == 'CSBrain':
+        model = Ada_CSBrain(args, from_pretrain)
+        if args.task_mod == 'Classification':
+            model.task_head = LinearWithConstraint(len(ch_names) * num_t * 200, args.nb_classes, max_norm=1, flatten=1)
+        elif args.task_mod == 'Regression':
+            model.task_head = RegressionLayers(input_dim=len(ch_names) * num_t * 200, hidden_dim=200, output_dim=1, flatten=1)
+        elif args.task_mod == 'Retrieval':
+            model.task_head = LinearWithConstraint(len(ch_names) * num_t * 200, 1024, max_norm=1, flatten=1)
+    elif args.model_name == 'CodeBrain':
+        model = Ada_CodeBrain(args, from_pretrain)
+        if args.task_mod == 'Classification':
+            model.task_head = LinearWithConstraint(len(ch_names) * num_t * 200, args.nb_classes, max_norm=1, flatten=1)
+        elif args.task_mod == 'Regression':
+            model.task_head = RegressionLayers(input_dim=(len(ch_names) * num_t) * 200, hidden_dim=200, output_dim=1, flatten=1)
+        elif args.task_mod == 'Retrieval':
+            model.task_head = LinearWithConstraint(len(ch_names) * num_t * 200, 1024, max_norm=1, flatten=1)
     elif args.model_name == 'CBraMod':
         model = Ada_CBraMod(args, from_pretrain)
         if args.task_mod == 'Classification':
@@ -522,7 +649,15 @@ def get_models(args, ch_names, num_t):
 
 # ------------------------------------------Load the dataset-------------------------------------------------------
 def get_datasets(args, dataset_info):
-    root = dataset_info['root'][args.subject_mod]
+    root = args.split_root or dataset_info['root'][args.subject_mod]
+    if args.split_root:
+        required_files = [os.path.join(root, f'{name}.json') for name in ('train', 'val', 'test')]
+        missing_files = [path for path in required_files if not os.path.isfile(path)]
+        if missing_files:
+            raise FileNotFoundError(
+                '--split_root must contain train.json, val.json, and test.json; missing: '
+                + ', '.join(missing_files)
+            )
     if args.subject_mod == 'fewshot':
         dataset_train = utils.FewShotDataLoader(root + '/train.json', args.sampling_rate, args.norm_method, k_shot=args.k_shot)
         dataset_val = utils.CustomDataLoader(root + '/val.json', args.sampling_rate, args.norm_method)
@@ -562,7 +697,22 @@ def main(args, ds_init):
 
     args.save_ckpt_freq = args.epochs
 
-    args.output_dir = f"finetuning_results/{args.task_mod}/{args.model_name}_results/finetune_{args.finetune_mod}/{args.dataset}_{args.finetune_mod}_epoch{args.epochs}_bs{args.batch_size}_lr{args.lr}_{args.norm_method}_{args.seed}"
+    if args.subject_mod == "fewshot":
+        setting_name = f"{args.subject_mod}_{args.k_shot}_setting"
+    else:
+        setting_name = f"{args.subject_mod}_setting"
+
+    subject_suffix = (f"_sub{args.subject_id}" if args.task_mod == "Retrieval" else "")
+
+    experiment_tag = f"_{args.experiment_tag}" if args.experiment_tag else ""
+    args.output_dir = (
+        f"finetuning_results/{args.task_mod}/{args.model_name}_results/"
+        f"{setting_name}/finetune_{args.finetune_mod}/"
+        f"{args.dataset}_{args.finetune_mod}{subject_suffix}"
+        f"_epoch{args.epochs}_bs{args.batch_size}_lr{args.lr}"
+        f"_{args.norm_method}_wd{args.weight_decay}{experiment_tag}_{args.seed}"
+    )
+
     Path(args.output_dir).mkdir(parents=True, exist_ok=True)
     
     print(args)
@@ -754,10 +904,7 @@ def main(args, ds_init):
             wd_schedule_values=wd_schedule_values, num_training_steps_per_epoch=num_training_steps_per_epoch)
         
         # Save results to a CSV file
-        results_dir = os.path.join(args.output_dir, current_time)
-        os.makedirs(results_dir, exist_ok=True)
-
-        results_file = f"{results_dir}/results.csv"
+        results_file = f"{args.output_dir}/results.csv"
         with open(results_file, 'w', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=results[0].keys())
             writer.writeheader()

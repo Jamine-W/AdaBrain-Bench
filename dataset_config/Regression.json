@@ -1,8 +1,7 @@
 {
   "SEED-VIG": {
     "root": {
-      "cross": "./preprocessing/SEED-VIG/cross_subject_json",
-      "fewshot": "./preprocessing/SEED-VIG/cross_subject_json"
+      "cross": "./preprocessing/SEED-VIG/cross_subject_json"
     },
     "num_classes": 1,
     "num_t": 8

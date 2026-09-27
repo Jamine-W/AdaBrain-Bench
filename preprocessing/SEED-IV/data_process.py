@@ -66,7 +66,7 @@ def filter_eeg(raw_array, sfreq=200, l_freq=0.1, h_freq=75, notch=50):
 os.makedirs(processed_data_path, exist_ok=True)
 
 for sub_idx, sub_name in enumerate(tqdm(SUBJECT_NAMES, desc="Subject")):
-    sub_dir = os.path.join(processed_data_path, str(sub_idx))
+    sub_dir = os.path.join(processed_data_path, str(sub_idx + 1))
     os.makedirs(sub_dir, exist_ok=True)
 
     for ses in [1, 2, 3]:

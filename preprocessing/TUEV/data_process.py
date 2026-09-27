@@ -2,6 +2,7 @@ import mne
 import numpy as np
 import os
 import pickle
+import shutil
 from tqdm import tqdm
 import sys
 
@@ -15,11 +16,13 @@ print(f"Data root: {data_root}")
 raw_data_path = os.path.join(data_root,'TUEV/raw_data/v2.0.1')
 processed_data_path = os.path.join(data_root,'TUEV/processed_data')
 os.makedirs(processed_data_path, exist_ok=True)
-train_dir = os.path.join(processed_data_path, "train_dir")
-eval_dir = os.path.join(processed_data_path, "eval_dir")
-test_dir = os.path.join(processed_data_path, "test_dir")
+train_dir = os.path.join(processed_data_path, "train")
+eval_dir = os.path.join(processed_data_path, "eval")
+test_dir = os.path.join(processed_data_path, "test")
 if not os.path.exists(train_dir):
     os.makedirs(train_dir)
+if not os.path.exists(eval_dir):
+    os.makedirs(eval_dir)
 if not os.path.exists(test_dir):
     os.makedirs(test_dir)
 
@@ -163,9 +166,12 @@ train_sub = list(set(train_sub) - set(val_sub))
 val_files = [f for f in train_files if f.split("_")[0] in val_sub]
 train_files = [f for f in train_files if f.split("_")[0] in train_sub]
 
-# for file in train_files:
-#     os.system(f"cp {os.path.join(train_dir, file)} {os.path.join(train_dir, file)}")
+# Move validation subjects out of the training directory so the same samples
+# are not present in both training and validation sets.
 for file in val_files:
-    os.system(f"cp {os.path.join(train_dir, file)} {os.path.join(eval_dir, file)}")
+    shutil.move(
+        os.path.join(train_dir, file),
+        os.path.join(eval_dir, file),
+    )
 # for file in test_files:
 #     os.system(f"cp {os.path.join(test_dir, file)} {os.path.join(final_test_dir, file)}")

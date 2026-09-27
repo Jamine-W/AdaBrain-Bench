@@ -34,7 +34,7 @@ def load_subject_data(subject_folder):
     """Load all data from a subject."""
     subject_data = []
     subject_num = int(subject_folder.split("/")[-1])
-    subject_name = str(subject_num + 1)
+    subject_name = str(subject_num)
 
     for file in natsorted(f for f in os.listdir(subject_folder) if f.endswith('.pkl')):
         try:
@@ -112,8 +112,8 @@ def save_dataset(data_list, save_path, norm_params=None):
 
 def main():
     subject_folders = natsorted([os.path.join(processed_data_path, f) for f in os.listdir(processed_data_path)])
-    train_subjects = [s for s in subject_folders if int(s.split('/')[-1]) <= 12]
-    test_subjects = [s for s in subject_folders if int(s.split('/')[-1]) > 12]
+    train_subjects = [s for s in subject_folders if int(s.split('/')[-1]) <= 13]
+    test_subjects = [s for s in subject_folders if int(s.split('/')[-1]) > 13]
 
     all_train_data, all_val_data = [], []
     for sub_id, subject in enumerate(train_subjects):

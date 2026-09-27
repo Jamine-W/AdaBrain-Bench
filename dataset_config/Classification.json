@@ -1,0 +1,87 @@
+{
+  "SEED": {
+    "root": {
+      "multi": "./preprocessing/SEED/multi_subject_json",
+      "cross": "./preprocessing/SEED/cross_subject_json",
+      "fewshot": "./preprocessing/SEED/multi_subject_json"
+    },
+    "num_classes": 3,
+    "num_t": 1
+  },
+  "SEED-IV": {
+    "root": {
+      "multi": "./preprocessing/SEED-IV/multi_subject_json",
+      "cross": "./preprocessing/SEED-IV/cross_subject_json",
+      "fewshot": "./preprocessing/SEED-IV/multi_subject_json"
+    },
+    "num_classes": 4,
+    "num_t": 1
+  },
+  "EEGMAT": {
+    "root": {
+      "cross": "./preprocessing/EEGMAT/cross_subject_json"
+    },
+    "num_classes": 2,
+    "num_t": 4
+  },
+  "BCI-IV-2A": {
+    "root": {
+      "multi": "./preprocessing/BCI-IV-2A/multi_subject_json",
+      "cross": "./preprocessing/BCI-IV-2A/cross_subject_json",
+      "fewshot": "./preprocessing/BCI-IV-2A/multi_subject_json"
+    },
+    "num_classes": 4,
+    "num_t": 4
+  },
+  "SHU": {
+    "root": {
+      "multi": "./preprocessing/SHU/multi_subject_json",
+      "cross": "./preprocessing/SHU/cross_subject_json",
+      "fewshot": "./preprocessing/SHU/multi_subject_json"
+    },
+    "num_classes": 2,
+    "num_t": 4
+  },
+  "TUEV": {
+    "root": {
+      "cross": "./preprocessing/TUEV/cross_subject_json"
+    },
+    "num_classes": 6,
+    "num_t": 5
+  },
+  "TUAB": {
+    "root": {
+      "cross": "./preprocessing/TUAB/cross_subject_json"
+    },
+    "num_classes": 2,
+    "num_t": 10
+  },
+  "Siena": {
+    "root": {
+      "cross": "./preprocessing/Siena/cross_subject_json"
+    },
+    "num_classes": 2,
+    "num_t": 10
+  },
+  "HMC": {
+    "root": {
+      "cross": "./preprocessing/HMC/cross_subject_json"
+    },
+    "num_classes": 5,
+    "num_t": 30
+  },
+  "SHHS": {
+    "root": {
+      "cross": "./preprocessing/SHHS/cross_subject_json"
+    },
+    "num_classes": 5,
+    "num_t": 30
+  },
+  "Sleep-EDF": {
+    "root": {
+      "cross": "./preprocessing/Sleep-EDF/cross_subject_json"
+    },
+    "num_classes": 5,
+    "num_t": 30
+  }
+}
